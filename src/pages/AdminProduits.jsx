@@ -4,16 +4,21 @@ import { ArrowLeft, Plus, Search, RefreshCw } from 'lucide-react';
 
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
+import PaginationControls from '../components/ui/pagination-controls';
 import { Skeleton } from '../components/ui/skeleton';
 import ProductRow from '../components/Admin/ProductRow';
 import ProductForm from '../components/Admin/ProductForm';
+import { PRODUCT_CATEGORIES } from '../lib/categories';
+import { getPageCount, paginate } from '../lib/pagination';
 import { getCachedProducts, listProducts } from '../services/products';
 
-const CATEGORIES = ['tous', 'plats', 'burgers', 'sandwichs', 'desserts', 'boissons'];
+const CATEGORIES = [{ value: 'tous', label: 'Tous' }, ...PRODUCT_CATEGORIES];
+const PAGE_SIZE = 10;
 
 export default function AdminProduits() {
   const [search, setSearch] = useState('');
   const [cat, setCat] = useState('tous');
+  const [page, setPage] = useState(1);
   const [creating, setCreating] = useState(false);
   const [products, setProducts] = useState(() => getCachedProducts());
   const [isLoading, setIsLoading] = useState(() => getCachedProducts().length === 0);
@@ -47,11 +52,14 @@ export default function AdminProduits() {
   }, [loadProducts]);
 
   const filtered = products.filter((product) => {
-    const matchCat = cat === 'tous' || product.categorie === cat;
+    const matchCat = cat === 'tous' || product.category === cat;
     const matchSearch =
-      !search.trim() || product.nom.toLowerCase().includes(search.toLowerCase());
+      !search.trim() || product.name.toLowerCase().includes(search.toLowerCase());
     return matchCat && matchSearch;
   });
+  const pageCount = getPageCount(filtered.length, PAGE_SIZE);
+  const currentPage = Math.min(page, pageCount);
+  const visibleProducts = paginate(filtered, currentPage, PAGE_SIZE);
 
   const handleCreateSuccess = () => {
     setCreating(false);
@@ -105,7 +113,10 @@ export default function AdminProduits() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setPage(1);
+            }}
             placeholder="Rechercher un produit..."
             className="pl-9 bg-secondary border-border font-inter"
           />
@@ -114,16 +125,19 @@ export default function AdminProduits() {
         <div className="bg-secondary w-full flex overflow-x-auto h-auto p-1 gap-1 rounded-lg">
           {CATEGORIES.map((category) => (
             <button
-              key={category}
+              key={category.value}
               type="button"
-              onClick={() => setCat(category)}
+              onClick={() => {
+                setCat(category.value);
+                setPage(1);
+              }}
               className={`font-inter text-xs py-2 px-3 whitespace-nowrap capitalize flex-shrink-0 rounded-md transition-colors ${
-                cat === category
+                cat === category.value
                   ? 'bg-primary text-primary-foreground'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              {category}
+              {category.label}
             </button>
           ))}
         </div>
@@ -131,8 +145,8 @@ export default function AdminProduits() {
         <div className="flex items-center justify-between text-xs font-inter text-muted-foreground">
           <span>{filtered.length} produit{filtered.length !== 1 ? 's' : ''}</span>
           <span>
-            {filtered.filter((product) => product.disponible).length} disponibles •{' '}
-            {filtered.filter((product) => !product.disponible).length} indisponibles
+            {filtered.filter((product) => product.available).length} disponibles •{' '}
+            {filtered.filter((product) => !product.available).length} indisponibles
           </span>
         </div>
 
@@ -145,7 +159,7 @@ export default function AdminProduits() {
         ) : filtered.length === 0 ? (
           <div className="text-center py-20">
             <p className="font-inter text-muted-foreground text-sm">
-              {errorMessage || 'Aucun produit trouve'}
+              {errorMessage || 'Aucun produit trouvé'}
             </p>
             <button
               type="button"
@@ -157,9 +171,10 @@ export default function AdminProduits() {
           </div>
         ) : (
           <div className="space-y-3 pb-8">
-            {filtered.map((product) => (
+            {visibleProducts.map((product) => (
               <ProductRow key={product.id} product={product} onChanged={loadProducts} />
             ))}
+            <PaginationControls page={currentPage} pageCount={pageCount} onPageChange={setPage} />
           </div>
         )}
       </div>

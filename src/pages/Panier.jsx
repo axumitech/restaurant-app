@@ -1,22 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, ShoppingBag, Loader2 } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { ArrowLeft, ShoppingBag, Loader2, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 
-import { getCart, updateQuantity, clearCart, setLastOrderId } from '../lib/cartStore';
-import { createOrder } from '../services/orders';
+import { getCart, updateQuantity, clearCart, saveCart } from '../lib/cartStore';
+import { formatCurrency } from '../lib/currency';
+import { createPendingOrder } from '../services/pendingOrders';
+import { listProductsByIds } from '../services/products';
 import Header from '../components/Restaurant/Header';
 import CartItem from '../components/Restaurant/CartItem';
-import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
 
 export default function Panier() {
   const MotionDiv = motion.div;
-  const navigate = useNavigate();
   const [cart, setCart] = useState(getCart());
-  const [nomClient, setNomClient] = useState('');
-  const [typeService, setTypeService] = useState('sur_place');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -25,19 +23,58 @@ export default function Panier() {
     return () => window.removeEventListener('cart-updated', handleUpdate);
   }, []);
 
-  const handleUpdateQuantity = (produitId, qty) => {
-    updateQuantity(produitId, qty);
+  useEffect(() => {
+    let active = true;
+
+    async function refreshCartPrices() {
+      const currentCart = getCart();
+      if (currentCart.length === 0) return;
+
+      try {
+        const products = await listProductsByIds(currentCart.map((item) => item.product_id));
+        const productsById = new Map(products.map((product) => [product.id, product]));
+        const refreshedCart = currentCart
+          .map((item) => {
+            const product = productsById.get(item.product_id);
+            return product
+              ? {
+                  product_id: product.id,
+                  name: product.name,
+                  price: product.price,
+                  image_url: product.image_url,
+                  quantity: item.quantity,
+                }
+              : null;
+          })
+          .filter(Boolean);
+
+        if (active) {
+          saveCart(refreshedCart);
+          setCart(refreshedCart);
+        }
+      } catch {
+        toast.error('Impossible de vérifier les prix du panier');
+      }
+    }
+
+    refreshCartPrices();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const handleUpdateQuantity = (productId, quantity) => {
+    updateQuantity(productId, quantity);
     setCart(getCart());
   };
 
-  const total = cart.reduce((sum, item) => sum + item.prix * item.quantite, 0);
+  const total = useMemo(
+    () => cart.reduce((sum, item) => sum + item.price * item.quantity, 0),
+    [cart],
+  );
 
-  const handleOrder = async () => {
-    if (!nomClient.trim()) {
-      toast.error('Veuillez entrer votre nom');
-      return;
-    }
-
+  const handleSendToManager = async () => {
     if (cart.length === 0) {
       toast.error('Votre panier est vide');
       return;
@@ -46,26 +83,17 @@ export default function Panier() {
     setLoading(true);
 
     try {
-      const order = await createOrder({
-        nom_client: nomClient.trim(),
-        total,
-        statut: 'en_attente',
-        type_service: typeService,
-        items: cart.map((item) => ({
-          produit_id: item.produit_id,
-          nom: item.nom,
-          prix: item.prix,
-          quantite: item.quantite,
-          image_url: item.image_url,
+      await createPendingOrder(
+        cart.map((item) => ({
+          product_id: item.product_id,
+          quantity: item.quantity,
         })),
-      });
+      );
 
-      setLastOrderId(order.id);
       clearCart();
-      toast.success('Commande envoyee !');
-      navigate(`/commande/${order.id}`);
+      toast.success("Commande envoyée à l'admin");
     } catch (error) {
-      toast.error(error.message || 'Impossible d envoyer la commande');
+      toast.error(error.message || "Impossible d'envoyer la commande");
     } finally {
       setLoading(false);
     }
@@ -100,69 +128,29 @@ export default function Panier() {
         ) : (
           <MotionDiv initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
             {cart.map((item) => (
-              <CartItem key={item.produit_id} item={item} onUpdateQuantity={handleUpdateQuantity} />
+              <CartItem key={item.product_id} item={item} onUpdateQuantity={handleUpdateQuantity} />
             ))}
 
             <div className="bg-card rounded-2xl border border-border p-5 mt-4">
               <div className="flex items-center justify-between mb-4">
-                <span className="font-inter text-muted-foreground text-sm">Total</span>
+                <span className="font-inter text-muted-foreground text-sm">Total estimé</span>
                 <span className="font-inter font-black text-foreground text-2xl">
-                  {total.toFixed(2)} $
+                  {formatCurrency(total)}
                 </span>
               </div>
 
-              <div className="space-y-3">
-                <div>
-                  <label className="font-inter text-sm text-muted-foreground mb-2 block">
-                    Type de service *
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setTypeService('sur_place')}
-                      className={`py-3 rounded-xl font-inter font-semibold text-sm transition-all border-2 ${
-                        typeService === 'sur_place'
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-border bg-secondary text-muted-foreground hover:border-primary/40'
-                      }`}
-                    >
-                      Sur place
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setTypeService('a_emporter')}
-                      className={`py-3 rounded-xl font-inter font-semibold text-sm transition-all border-2 ${
-                        typeService === 'a_emporter'
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-border bg-secondary text-muted-foreground hover:border-primary/40'
-                      }`}
-                    >
-                      A emporter
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="font-inter text-sm text-muted-foreground mb-1.5 block">
-                    Votre nom *
-                  </label>
-                  <Input
-                    placeholder="Entrez votre nom"
-                    value={nomClient}
-                    onChange={(event) => setNomClient(event.target.value)}
-                    className="bg-secondary border-border font-inter"
-                  />
-                </div>
-
-                <Button
-                  onClick={handleOrder}
-                  disabled={loading}
-                  className="w-full bg-primary text-primary-foreground font-inter font-bold text-base py-6 rounded-2xl hover:shadow-lg hover:shadow-primary/20 transition-all"
-                >
-                  {loading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
-                  {loading ? 'Envoi en cours...' : 'Commander'}
-                </Button>
-              </div>
+              <Button
+                onClick={handleSendToManager}
+                disabled={loading}
+                className="w-full bg-primary text-primary-foreground font-inter font-bold text-base py-6 rounded-2xl hover:shadow-lg hover:shadow-primary/20 transition-all"
+              >
+                {loading ? (
+                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                ) : (
+                  <Send className="w-5 h-5 mr-2" />
+                )}
+                {loading ? 'Envoi en cours...' : "Envoyer la commande à l'admin"}
+              </Button>
             </div>
           </MotionDiv>
         )}

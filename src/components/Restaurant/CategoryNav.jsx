@@ -1,13 +1,21 @@
 import React from 'react';
-import { UtensilsCrossed, Beef, Sandwich, IceCream, Wine } from 'lucide-react';
+import { Beef, CakeSlice, CupSoda, Drumstick, UtensilsCrossed } from 'lucide-react';
 
-const categories = [
-  { id: 'plats', label: 'Plats', icon: UtensilsCrossed },
-  { id: 'burgers', label: 'Burgers', icon: Beef },
-  { id: 'sandwichs', label: 'Sandwichs', icon: Sandwich },
-  { id: 'desserts', label: 'Desserts', icon: IceCream },
-  { id: 'boissons', label: 'Boissons', icon: Wine },
-];
+import { PRODUCT_CATEGORIES } from '../../lib/categories';
+
+const categoryIcons = {
+  plats_congolais: UtensilsCrossed,
+  grillades: Beef,
+  accompagnements: Drumstick,
+  boissons: CupSoda,
+  desserts: CakeSlice,
+};
+
+const categories = PRODUCT_CATEGORIES.map((category) => ({
+  ...category,
+  id: category.value,
+  icon: categoryIcons[category.value] || UtensilsCrossed,
+}));
 
 export default function CategoryNav({ active, onSelect }) {
   return (

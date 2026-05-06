@@ -1,13 +1,12 @@
-import { getSupabaseClient } from '../lib/supabase';
-import { toast } from 'sonner';
+import { callAdminRpc } from './adminRpc';
+import { notifyPendingOrdersUpdated } from './pendingOrders';
 
 function normalizeError(error, fallbackMessage) {
   if (error instanceof Error) {
     return error;
   }
 
-  const message = error?.message || fallbackMessage;
-  return new Error(message);
+  return new Error(error?.message || fallbackMessage);
 }
 
 function dispatchOrdersUpdated() {
@@ -16,31 +15,19 @@ function dispatchOrdersUpdated() {
   }
 }
 
-function handleSupabaseError(error) {
-  console.error(error);
-  toast.error('Erreur serveur');
-}
-
-function buildEstimateMinutes(activeOrdersCount) {
-  return Math.max(10, (activeOrdersCount + 1) * 10);
-}
-
 function mapItemsByOrderId(items) {
   return (items || []).reduce((accumulator, item) => {
     if (!accumulator[item.order_id]) {
       accumulator[item.order_id] = [];
     }
 
-    accumulator[item.order_id].push(item);
+    accumulator[item.order_id].push({
+      ...item,
+      unit_price: Number(item.unit_price || 0),
+      total_price: Number(item.total_price || 0),
+    });
     return accumulator;
   }, {});
-}
-
-function hydrateOrder(order, itemsByOrderId) {
-  return {
-    ...order,
-    items: itemsByOrderId[order.id] || [],
-  };
 }
 
 async function fetchOrderItemsByOrderIds(orderIds) {
@@ -48,166 +35,59 @@ async function fetchOrderItemsByOrderIds(orderIds) {
     return {};
   }
 
-  const supabase = getSupabaseClient();
-  const { data, error } = await supabase.from('order_items').select('*').in('order_id', orderIds);
-
-  if (error) {
-    handleSupabaseError(error);
-    throw error;
-  }
+  const data = await callAdminRpc('admin_list_order_items', {
+    input_order_ids: orderIds,
+  });
 
   return mapItemsByOrderId(data || []);
 }
 
-async function fetchActiveOrdersCount() {
-  const supabase = getSupabaseClient();
-  const { count, error } = await supabase
-    .from('orders')
-    .select('id', { count: 'exact', head: true })
-    .in('statut', ['en_attente', 'en_preparation']);
-
-  if (error) {
-    handleSupabaseError(error);
-    throw error;
-  }
-
-  return count || 0;
-}
-
 export async function listOrders() {
   try {
-    const supabase = getSupabaseClient();
-    const { data, error } = await supabase
-      .from('orders')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      handleSupabaseError(error);
-      throw error;
-    }
-
+    const data = await callAdminRpc('admin_list_orders');
     const orders = data || [];
     const itemsByOrderId = await fetchOrderItemsByOrderIds(orders.map((order) => order.id));
 
-    return orders.map((order) => hydrateOrder(order, itemsByOrderId));
+    return orders.map((order) => ({
+      ...order,
+      clients: {
+        id: order.client_id,
+        name: order.client_name,
+        phone: order.client_phone,
+      },
+      total_amount: Number(order.total_amount || 0),
+      paid_amount: Number(order.paid_amount || 0),
+      remaining_amount: Number(order.remaining_amount || 0),
+      items: itemsByOrderId[order.id] || [],
+    }));
   } catch (error) {
     throw normalizeError(error, 'Impossible de charger les commandes.');
   }
 }
 
-export async function getOrderById(orderId) {
+export async function validatePendingOrder({
+  pendingOrderId,
+  clientId,
+  paymentType,
+  paidAmount,
+}) {
   try {
-    const supabase = getSupabaseClient();
-    const { data: order, error: orderError } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('id', orderId)
-      .maybeSingle();
-
-    if (orderError) {
-      handleSupabaseError(orderError);
-      throw orderError;
+    if (!clientId) {
+      throw new Error('Selectionnez un client.');
     }
 
-    if (!order) {
-      return null;
-    }
+    const orderId = await callAdminRpc('admin_validate_pending_order', {
+      input_pending_order_id: pendingOrderId,
+      input_client_id: clientId,
+      input_payment_type: paymentType,
+      input_paid_amount: Number(paidAmount || 0),
+    });
 
-    const { data: items, error: itemsError } = await supabase
-      .from('order_items')
-      .select('*')
-      .eq('order_id', orderId);
-
-    if (itemsError) {
-      handleSupabaseError(itemsError);
-      throw itemsError;
-    }
-
-    return {
-      ...order,
-      items: items || [],
-    };
-  } catch (error) {
-    throw normalizeError(error, 'Impossible de charger cette commande.');
-  }
-}
-
-export async function createOrder(orderInput) {
-  let createdOrderId = null;
-
-  try {
-    const supabase = getSupabaseClient();
-    const activeOrdersCount = await fetchActiveOrdersCount();
-
-    const orderPayload = {
-      nom_client: orderInput.nom_client,
-      total: orderInput.total,
-      statut: 'en_attente',
-      type_service: orderInput.type_service,
-      temps_estime: orderInput.temps_estime || buildEstimateMinutes(activeOrdersCount),
-    };
-
-    const { data: createdOrder, error: orderError } = await supabase
-      .from('orders')
-      .insert(orderPayload)
-      .select()
-      .single();
-
-    if (orderError) {
-      handleSupabaseError(orderError);
-      throw orderError;
-    }
-
-    createdOrderId = createdOrder.id;
-
-    const orderItemsPayload = (orderInput.items || []).map((item) => ({
-      order_id: createdOrder.id,
-      product_id: item.produit_id,
-      nom: item.nom,
-      prix: item.prix,
-      quantite: item.quantite,
-      image_url: item.image_url || '',
-    }));
-
-    if (orderItemsPayload.length > 0) {
-      const { error: itemsError } = await supabase.from('order_items').insert(orderItemsPayload);
-
-      if (itemsError) {
-        handleSupabaseError(itemsError);
-        throw itemsError;
-      }
-    }
-
+    notifyPendingOrdersUpdated();
     dispatchOrdersUpdated();
 
-    return {
-      ...createdOrder,
-      items: orderItemsPayload,
-    };
+    return { id: orderId };
   } catch (error) {
-    if (createdOrderId) {
-      const supabase = getSupabaseClient();
-      await supabase.from('orders').delete().eq('id', createdOrderId);
-    }
-
-    throw normalizeError(error, 'Impossible de creer la commande.');
-  }
-}
-
-export async function updateOrder(orderId, updates) {
-  try {
-    const supabase = getSupabaseClient();
-    const { error } = await supabase.from('orders').update(updates).eq('id', orderId);
-
-    if (error) {
-      handleSupabaseError(error);
-      throw error;
-    }
-
-    dispatchOrdersUpdated();
-    return { id: orderId, ...updates };
-  } catch (error) {
-    throw normalizeError(error, 'Impossible de mettre a jour la commande.');
+    throw normalizeError(error, 'Impossible de valider la commande.');
   }
 }

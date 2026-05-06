@@ -8,21 +8,21 @@ export default function Header() {
       <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-inter font-black text-sm">110</span>
+            <span className="text-primary-foreground font-inter font-black text-sm">KD</span>
           </div>
           <div>
             <h1 className="font-inter font-bold text-sm text-foreground leading-tight">
-              110 Street
+              Restaurant Kin Délices
             </h1>
             <p className="font-inter text-xs text-primary font-semibold leading-tight">
-              International Dinner
+              Cuisine congolaise
             </p>
           </div>
         </Link>
         <div className="flex items-center gap-3 text-muted-foreground">
           <div className="flex items-center gap-1 text-xs">
             <Clock className="w-3.5 h-3.5" />
-            <span className="font-inter">11h-23h</span>
+            <span className="font-inter">11h-14h</span>
           </div>
           <div className="flex items-center gap-1 text-xs">
             <MapPin className="w-3.5 h-3.5" />

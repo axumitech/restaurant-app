@@ -3,6 +3,8 @@ import { Pencil, Trash2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import ProductForm from './ProductForm';
+import { getCategoryLabel } from '../../lib/categories';
+import { formatCurrency } from '../../lib/currency';
 import { getProductImageUrl } from '../../lib/productImages';
 import { deleteProduct, updateProduct } from '../../services/products';
 
@@ -14,11 +16,17 @@ export default function ProductRow({ product, onChanged }) {
   const handleToggle = async () => {
     setTogglingAvail(true);
     try {
-      await updateProduct(product.id, { disponible: !product.disponible });
+      await updateProduct(product.id, {
+        name: product.name,
+        price: product.price,
+        category: product.category,
+        image_url: product.image_url,
+        available: !product.available,
+      });
       if (typeof onChanged === 'function') {
         onChanged();
       }
-      toast.success(product.disponible ? 'Produit desactive' : 'Produit active');
+      toast.success(product.available ? 'Produit desactive' : 'Produit active');
     } catch (error) {
       toast.error(error.message || 'Impossible de modifier la disponibilite');
     } finally {
@@ -27,7 +35,7 @@ export default function ProductRow({ product, onChanged }) {
   };
 
   const handleDelete = async () => {
-    if (!window.confirm(`Supprimer "${product.nom}" ?`)) return;
+    if (!window.confirm(`Supprimer "${product.name}" ?`)) return;
     setDeleting(true);
     try {
       await deleteProduct(product.id);
@@ -53,29 +61,23 @@ export default function ProductRow({ product, onChanged }) {
     <>
       <div className="bg-card border border-border rounded-2xl p-3 flex items-center gap-3">
         <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-secondary">
-          {product.image_url ? (
-            <img src={getProductImageUrl(product.image_url)} alt={product.nom} className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs font-inter">
-              N/A
-            </div>
-          )}
+          <img src={getProductImageUrl(product.image_url)} alt={product.name} className="w-full h-full object-cover" />
         </div>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <p className="font-inter font-semibold text-foreground text-sm truncate">{product.nom}</p>
+            <p className="font-inter font-semibold text-foreground text-sm truncate">{product.name}</p>
             <span
               className={`text-xs font-inter px-2 py-0.5 rounded-full font-medium ${
-                product.disponible ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'
+                product.available ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'
               }`}
             >
-              {product.disponible ? 'Disponible' : 'Indisponible'}
+              {product.available ? 'Disponible' : 'Indisponible'}
             </span>
           </div>
           <div className="flex items-center gap-3 mt-0.5">
-            <span className="font-inter font-bold text-primary text-sm">{product.prix?.toFixed(2)} $</span>
-            <span className="font-inter text-xs text-muted-foreground capitalize">{product.categorie}</span>
+            <span className="font-inter font-bold text-primary text-sm">{formatCurrency(product.price)}</span>
+            <span className="font-inter text-xs text-muted-foreground">{getCategoryLabel(product.category)}</span>
           </div>
         </div>
 
@@ -85,12 +87,12 @@ export default function ProductRow({ product, onChanged }) {
             onClick={handleToggle}
             disabled={togglingAvail}
             className={`relative w-10 h-5 rounded-full transition-colors ${
-              product.disponible ? 'bg-primary' : 'bg-muted'
+              product.available ? 'bg-primary' : 'bg-muted'
             } ${togglingAvail ? 'opacity-50' : ''}`}
           >
             <span
               className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${
-                product.disponible ? 'left-5' : 'left-0.5'
+                product.available ? 'left-5' : 'left-0.5'
               }`}
             />
           </button>

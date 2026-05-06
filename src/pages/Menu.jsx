@@ -4,11 +4,17 @@ import Header from '../components/Restaurant/Header';
 import CategoryNav from '../components/Restaurant/CategoryNav';
 import ProductCard from '../components/Restaurant/ProductCard';
 import FloatingCartButton from '../components/Restaurant/FloatingCartButton';
+import PaginationControls from '../components/ui/pagination-controls';
 import { Skeleton } from '../components/ui/skeleton';
+import { DEFAULT_PRODUCT_CATEGORY, getCategoryLabel } from '../lib/categories';
+import { getPageCount, paginate } from '../lib/pagination';
 import { getCachedAvailableProducts, listAvailableProducts } from '../services/products';
 
+const PAGE_SIZE = 12;
+
 export default function Menu() {
-  const [activeCategory, setActiveCategory] = useState('plats');
+  const [activeCategory, setActiveCategory] = useState(DEFAULT_PRODUCT_CATEGORY);
+  const [page, setPage] = useState(1);
   const [products, setProducts] = useState(() => getCachedAvailableProducts());
   const [isLoading, setIsLoading] = useState(() => getCachedAvailableProducts().length === 0);
   const [errorMessage, setErrorMessage] = useState('');
@@ -46,14 +52,22 @@ export default function Menu() {
   }, [fetchProducts]);
 
   const filtered = useMemo(
-    () => products.filter((product) => product.categorie === activeCategory),
+    () => products.filter((product) => product.category === activeCategory),
     [activeCategory, products],
   );
+  const pageCount = getPageCount(filtered.length, PAGE_SIZE);
+  const currentPage = Math.min(page, pageCount);
+  const visibleProducts = paginate(filtered, currentPage, PAGE_SIZE);
+
+  const handleCategoryChange = (category) => {
+    setActiveCategory(category);
+    setPage(1);
+  };
 
   return (
     <div className="min-h-screen bg-background font-inter pb-28">
       <Header />
-      <CategoryNav active={activeCategory} onSelect={setActiveCategory} />
+      <CategoryNav active={activeCategory} onSelect={handleCategoryChange} />
 
       <div className="max-w-3xl mx-auto px-4 pt-5 pb-2">
         <div className="relative rounded-2xl overflow-hidden h-40 md:h-52">
@@ -68,10 +82,10 @@ export default function Menu() {
             <h2 className="font-inter font-black text-2xl md:text-3xl text-white leading-tight">
               Bienvenue chez
               <br />
-              <span className="text-primary">110 Street</span>
+              <span className="text-primary">Restaurant Kin Délices</span>
             </h2>
             <p className="font-inter text-white/70 text-sm mt-2">
-              Saveurs internationales • Kinshasa
+              Saveurs congolaises • Kinshasa
             </p>
           </div>
         </div>
@@ -80,7 +94,7 @@ export default function Menu() {
       <div className="max-w-3xl mx-auto px-4 py-4">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-inter font-bold text-foreground text-lg capitalize">
-            {activeCategory}
+            {getCategoryLabel(activeCategory)}
           </h3>
           <span className="font-inter text-xs text-muted-foreground">
             {filtered.length} articles
@@ -107,11 +121,12 @@ export default function Menu() {
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {filtered.map((product) => (
+            {visibleProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
         )}
+        <PaginationControls page={currentPage} pageCount={pageCount} onPageChange={setPage} />
       </div>
 
       <FloatingCartButton />

@@ -1,0 +1,13 @@
+-- Ordre conseille dans le SQL editor Supabase:
+--
+-- 1. schema.sql
+-- 2. admin_roles_clients.sql (retour au modele admin unique + champs clients)
+-- 3. admin_api.sql
+-- 4. seed_products_rdc_cdf.sql
+--
+-- Ne lance pas seed_products_rdc.sql si tu lances seed_products_rdc_cdf.sql.
+-- Le seed CDF vide puis recree public.products et doit rester le dernier.
+--
+-- Connexion admin:
+-- email: admin@restaurant.com
+-- mot de passe: admin123

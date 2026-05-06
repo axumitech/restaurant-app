@@ -4,6 +4,7 @@ import { ShoppingBag } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { getCartCount, getCartTotal } from '../../lib/cartStore';
+import { formatCurrency } from '../../lib/currency';
 
 export default function FloatingCartButton() {
   const MotionDiv = motion.div;
@@ -44,7 +45,7 @@ export default function FloatingCartButton() {
               </div>
               <span className="font-inter font-bold text-base">Voir le panier</span>
             </div>
-            <span className="font-inter font-bold text-base">{total.toFixed(2)} $</span>
+            <span className="font-inter font-bold text-base">{formatCurrency(total)}</span>
           </Link>
         </div>
       </MotionDiv>

@@ -5,24 +5,17 @@ import { toast } from 'sonner';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
+import { DEFAULT_PRODUCT_CATEGORY, PRODUCT_CATEGORIES } from '../../lib/categories';
 import { createProduct, updateProduct } from '../../services/products';
-
-const CATEGORIES = [
-  { value: 'plats', label: 'Plats' },
-  { value: 'burgers', label: 'Burgers' },
-  { value: 'sandwichs', label: 'Sandwichs' },
-  { value: 'desserts', label: 'Desserts' },
-  { value: 'boissons', label: 'Boissons' },
-];
 
 export default function ProductForm({ product, onSuccess, onCancel }) {
   const isEdit = Boolean(product);
   const [form, setForm] = useState({
-    nom: product?.nom || '',
-    prix: product?.prix?.toString() || '',
-    categorie: product?.categorie || 'plats',
+    name: product?.name || '',
+    price: product?.price?.toString() || '',
+    category: product?.category || DEFAULT_PRODUCT_CATEGORY,
     image_url: product?.image_url || '',
-    disponible: product?.disponible !== false,
+    available: product?.available !== false,
   });
   const [saving, setSaving] = useState(false);
 
@@ -42,12 +35,12 @@ export default function ProductForm({ product, onSuccess, onCancel }) {
   };
 
   const handleSave = async () => {
-    if (!form.nom.trim()) {
+    if (!form.name.trim()) {
       toast.error('Le nom est requis');
       return;
     }
 
-    if (!form.prix || Number.isNaN(Number.parseFloat(form.prix))) {
+    if (!form.price || Number.isNaN(Number.parseFloat(form.price))) {
       toast.error('Le prix est invalide');
       return;
     }
@@ -55,20 +48,20 @@ export default function ProductForm({ product, onSuccess, onCancel }) {
     setSaving(true);
 
     const payload = {
-      nom: form.nom.trim(),
-      prix: Number.parseFloat(form.prix),
-      categorie: form.categorie,
+      name: form.name.trim(),
+      price: Number.parseFloat(form.price),
+      category: form.category,
       image_url: form.image_url,
-      disponible: form.disponible,
+      available: form.available,
     };
 
     try {
       if (isEdit) {
         await updateProduct(product.id, payload);
-        toast.success('Produit mis a jour');
+        toast.success('Produit mis à jour');
       } else {
         await createProduct(payload);
-        toast.success('Produit cree');
+        toast.success('Produit créé');
       }
 
       if (typeof onSuccess === 'function') {
@@ -86,8 +79,8 @@ export default function ProductForm({ product, onSuccess, onCancel }) {
       <div className="space-y-1.5">
         <Label className="font-inter text-sm">Nom du produit *</Label>
         <Input
-          value={form.nom}
-          onChange={(event) => setField('nom', event.target.value)}
+          value={form.name}
+          onChange={(event) => setField('name', event.target.value)}
           placeholder="Ex: Burger Classic"
           className="bg-secondary border-border font-inter"
         />
@@ -95,25 +88,25 @@ export default function ProductForm({ product, onSuccess, onCancel }) {
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <Label className="font-inter text-sm">Prix (USD) *</Label>
+          <Label className="font-inter text-sm">Prix (FC) *</Label>
           <Input
             type="number"
             min="0"
-            step="0.5"
-            value={form.prix}
-            onChange={(event) => setField('prix', event.target.value)}
+            step="500"
+            value={form.price}
+            onChange={(event) => setField('price', event.target.value)}
             placeholder="0.00"
             className="bg-secondary border-border font-inter"
           />
         </div>
         <div className="space-y-1.5">
-          <Label className="font-inter text-sm">Categorie</Label>
+          <Label className="font-inter text-sm">Catégorie</Label>
           <select
-            value={form.categorie}
-            onChange={(event) => setField('categorie', event.target.value)}
+            value={form.category}
+            onChange={(event) => setField('category', event.target.value)}
             className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-border bg-secondary px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring font-inter"
           >
-            {CATEGORIES.map((category) => (
+            {PRODUCT_CATEGORIES.map((category) => (
               <option key={category.value} value={category.value}>
                 {category.label}
               </option>
@@ -166,12 +159,12 @@ export default function ProductForm({ product, onSuccess, onCancel }) {
         </div>
         <button
           type="button"
-          onClick={() => setField('disponible', !form.disponible)}
-          className={`relative w-12 h-6 rounded-full transition-colors ${form.disponible ? 'bg-primary' : 'bg-muted'}`}
+          onClick={() => setField('available', !form.available)}
+          className={`relative w-12 h-6 rounded-full transition-colors ${form.available ? 'bg-primary' : 'bg-muted'}`}
         >
           <span
             className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${
-              form.disponible ? 'left-7' : 'left-1'
+              form.available ? 'left-7' : 'left-1'
             }`}
           />
         </button>

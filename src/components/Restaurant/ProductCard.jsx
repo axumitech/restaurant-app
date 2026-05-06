@@ -4,18 +4,19 @@ import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 
 import { addToCart } from '../../lib/cartStore';
+import { formatCurrency } from '../../lib/currency';
 import { getProductImageUrl } from '../../lib/productImages';
 
 function ProductCard({ product }) {
   const MotionDiv = motion.div;
   const [added, setAdded] = useState(false);
-  const unavailable = product.disponible === false;
+  const unavailable = product.available === false;
 
   const handleAdd = () => {
     if (unavailable) return;
     addToCart(product);
     setAdded(true);
-    toast.success(`${product.nom} ajoute au panier`);
+    toast.success(`${product.name} ajoute au panier`);
     setTimeout(() => setAdded(false), 1200);
   };
 
@@ -32,7 +33,7 @@ function ProductCard({ product }) {
       <div className="relative aspect-[4/3] overflow-hidden">
         <img
           src={getProductImageUrl(product.image_url)}
-          alt={product.nom}
+          alt={product.name}
           loading="lazy"
           decoding="async"
           className={`w-full h-full object-cover transition-transform duration-500 ${
@@ -52,14 +53,14 @@ function ProductCard({ product }) {
 
         <div className="absolute bottom-3 left-3">
           <span className="bg-primary text-primary-foreground font-inter font-bold text-sm px-3 py-1 rounded-full">
-            {product.prix?.toFixed(2)} $
+            {formatCurrency(product.price)}
           </span>
         </div>
       </div>
 
       <div className="p-3 flex items-center justify-between gap-3">
         <h3 className="font-inter font-semibold text-foreground text-sm leading-tight flex-1 min-w-0 truncate">
-          {product.nom}
+          {product.name}
         </h3>
         <button
           type="button"
