@@ -86,6 +86,22 @@ export async function listPendingOrders() {
   }
 }
 
+export async function cancelPendingOrder(pendingOrderId) {
+  try {
+    if (!pendingOrderId) {
+      throw new Error('Commande introuvable.');
+    }
+
+    await callAdminRpc('admin_cancel_pending_order', {
+      input_pending_order_id: pendingOrderId,
+    });
+
+    dispatchPendingOrdersUpdated();
+  } catch (error) {
+    throw normalizeError(error, "Impossible d'annuler cette commande.");
+  }
+}
+
 export function notifyPendingOrdersUpdated() {
   dispatchPendingOrdersUpdated();
 }

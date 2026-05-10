@@ -1,9 +1,9 @@
 export const PRODUCT_CATEGORIES = [
-  { value: 'plats_congolais', label: 'Plats congolais' },
-  { value: 'grillades', label: 'Grillades' },
+  { value: 'condiments', label: 'Condiments' },
   { value: 'accompagnements', label: 'Accompagnements' },
+  { value: 'legumes', label: 'Légumes' },
+  { value: 'petit_dejeuner', label: 'Petit déjeuner' },
   { value: 'boissons', label: 'Boissons' },
-  { value: 'desserts', label: 'Desserts' },
 ];
 
 export const DEFAULT_PRODUCT_CATEGORY = PRODUCT_CATEGORIES[0].value;

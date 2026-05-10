@@ -72,8 +72,8 @@ export default function Menu() {
       <div className="max-w-3xl mx-auto px-4 pt-5 pb-2">
         <div className="relative rounded-2xl overflow-hidden h-40 md:h-52">
           <img
-            src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&q=80"
-            alt="Restaurant"
+            src="/premium-delice-hero.png"
+            alt="Clients attablés chez Premium Délice"
             loading="eager"
             className="w-full h-full object-cover"
           />
@@ -82,7 +82,7 @@ export default function Menu() {
             <h2 className="font-inter font-black text-2xl md:text-3xl text-white leading-tight">
               Bienvenue chez
               <br />
-              <span className="text-primary">Restaurant Kin Délices</span>
+              <span className="text-primary">Premium Délice</span>
             </h2>
             <p className="font-inter text-white/70 text-sm mt-2">
               Saveurs congolaises • Kinshasa

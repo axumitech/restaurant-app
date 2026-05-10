@@ -1,14 +1,14 @@
 import React from 'react';
-import { Beef, CakeSlice, CupSoda, Drumstick, UtensilsCrossed } from 'lucide-react';
+import { Coffee, CupSoda, Drumstick, Leaf, Soup, UtensilsCrossed } from 'lucide-react';
 
 import { PRODUCT_CATEGORIES } from '../../lib/categories';
 
 const categoryIcons = {
-  plats_congolais: UtensilsCrossed,
-  grillades: Beef,
+  condiments: Soup,
   accompagnements: Drumstick,
+  legumes: Leaf,
+  petit_dejeuner: Coffee,
   boissons: CupSoda,
-  desserts: CakeSlice,
 };
 
 const categories = PRODUCT_CATEGORIES.map((category) => ({

@@ -21,12 +21,8 @@ function applyBorder(cell) {
   };
 }
 
-export async function exportStyledExcel({ filename, title, subtitle, summaryRows, columns, rows }) {
-  const workbook = new ExcelJS.Workbook();
-  workbook.creator = 'Kin Délices';
-  workbook.created = new Date();
-
-  const worksheet = workbook.addWorksheet('Commandes', {
+function buildWorksheet(workbook, { name, title, subtitle, summaryRows, columns, rows }) {
+  const worksheet = workbook.addWorksheet(name || 'Commandes', {
     views: [{ state: 'frozen', ySplit: summaryRows.length + 5 }],
     pageSetup: {
       orientation: 'landscape',
@@ -100,6 +96,42 @@ export async function exportStyledExcel({ filename, title, subtitle, summaryRows
     from: { row: currentRow, column: 1 },
     to: { row: currentRow, column: columns.length },
   };
+}
+
+export async function exportStyledExcel({
+  filename,
+  title,
+  subtitle,
+  summaryRows,
+  columns,
+  rows,
+  worksheets,
+}) {
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'Premium Délice';
+  workbook.created = new Date();
+
+  if (Array.isArray(worksheets) && worksheets.length > 0) {
+    worksheets.forEach((worksheetConfig) => {
+      buildWorksheet(workbook, {
+        name: worksheetConfig.name,
+        title: worksheetConfig.title || title,
+        subtitle: worksheetConfig.subtitle || subtitle,
+        summaryRows,
+        columns: worksheetConfig.columns,
+        rows: worksheetConfig.rows,
+      });
+    });
+  } else {
+    buildWorksheet(workbook, {
+      name: 'Commandes',
+      title,
+      subtitle,
+      summaryRows,
+      columns,
+      rows,
+    });
+  }
 
   const buffer = await workbook.xlsx.writeBuffer();
   saveWorkbook(buffer, filename);

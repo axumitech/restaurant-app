@@ -8,11 +8,11 @@ export default function Header() {
       <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-inter font-black text-sm">KD</span>
+            <span className="text-primary-foreground font-inter font-black text-sm">PD</span>
           </div>
           <div>
             <h1 className="font-inter font-bold text-sm text-foreground leading-tight">
-              Restaurant Kin Délices
+              Premium Délice
             </h1>
             <p className="font-inter text-xs text-primary font-semibold leading-tight">
               Cuisine congolaise

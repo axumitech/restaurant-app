@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, Loader2, Plus, RefreshCw, Search, ShoppingBag } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Loader2, Plus, RefreshCw, Search, ShoppingBag, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '../components/ui/button';
@@ -11,7 +11,7 @@ import { formatCurrency } from '../lib/currency';
 import { getPageCount, paginate } from '../lib/pagination';
 import { getProductImageUrl } from '../lib/productImages';
 import { createClient, listClients } from '../services/clients';
-import { listPendingOrders } from '../services/pendingOrders';
+import { cancelPendingOrder, listPendingOrders } from '../services/pendingOrders';
 import { validatePendingOrder } from '../services/orders';
 
 const PAYMENT_TYPES = [
@@ -35,6 +35,7 @@ function PendingOrderCard({ pendingOrder, clients, onValidated, onClientCreated 
   const [paymentType, setPaymentType] = useState('cash');
   const [paidAmount, setPaidAmount] = useState('');
   const [saving, setSaving] = useState(false);
+  const [canceling, setCanceling] = useState(false);
 
   const total = useMemo(() => pendingOrder.total || 0, [pendingOrder.total]);
   const effectivePaidAmount = paymentType === 'credit' ? Number(paidAmount || 0) : total;
@@ -116,6 +117,23 @@ function PendingOrderCard({ pendingOrder, clients, onValidated, onClientCreated 
       toast.error(error.message || 'Impossible de valider la commande');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleCancel = async () => {
+    if (!window.confirm('Annuler ce panier en attente ? Cette action supprimera la fausse commande.')) {
+      return;
+    }
+
+    setCanceling(true);
+    try {
+      await cancelPendingOrder(pendingOrder.id);
+      toast.success('Commande annulée');
+      onValidated();
+    } catch (error) {
+      toast.error(error.message || "Impossible d'annuler la commande");
+    } finally {
+      setCanceling(false);
     }
   };
 
@@ -299,20 +317,32 @@ function PendingOrderCard({ pendingOrder, clients, onValidated, onClientCreated 
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-3 bg-secondary/50 rounded-xl p-3">
+      <div className="flex flex-col gap-3 bg-secondary/50 rounded-xl p-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="font-inter text-xs text-muted-foreground">
           Payé: <span className="font-bold text-green-400">{formatCurrency(effectivePaidAmount)}</span>
           {' '}· Dette:{' '}
           <span className="font-bold text-red-400">{formatCurrency(debt)}</span>
         </div>
-        <Button
-          onClick={handleValidate}
-          disabled={saving || total <= 0}
-          className="bg-primary text-primary-foreground font-inter font-bold rounded-xl"
-        >
-          {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
-          Valider
-        </Button>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleCancel}
+            disabled={saving || canceling}
+            className="border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/20 font-inter font-bold rounded-xl"
+          >
+            {canceling ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
+            Annuler
+          </Button>
+          <Button
+            onClick={handleValidate}
+            disabled={saving || canceling || total <= 0}
+            className="bg-primary text-primary-foreground font-inter font-bold rounded-xl"
+          >
+            {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
+            Valider
+          </Button>
+        </div>
       </div>
     </article>
   );

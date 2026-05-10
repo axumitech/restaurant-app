@@ -8,6 +8,7 @@ import Admin from './pages/Admin';
 import AdminProduits from './pages/AdminProduits';
 import AdminLogin from './pages/AdminLogin';
 import AdminValidation from './pages/AdminValidation';
+import AdminClients from './pages/AdminClients';
 import ProtectedAdminRoute from './components/Admin/ProtectedAdminRoute';
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route element={<ProtectedAdminRoute />}>
           <Route path="/admin" element={<Admin />} />
+          <Route path="/admin/clients" element={<AdminClients />} />
           <Route path="/admin/produits" element={<AdminProduits />} />
           <Route path="/admin/validation" element={<AdminValidation />} />
         </Route>
