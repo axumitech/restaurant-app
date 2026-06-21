@@ -7,6 +7,7 @@ import FloatingCartButton from '../components/Restaurant/FloatingCartButton';
 import PaginationControls from '../components/ui/pagination-controls';
 import { Skeleton } from '../components/ui/skeleton';
 import { DEFAULT_PRODUCT_CATEGORY, getCategoryLabel } from '../lib/categories';
+import { CATEGORY_BADGE_ICONS } from '../lib/categoryIcons';
 import { getPageCount, paginate } from '../lib/pagination';
 import { getCachedAvailableProducts, listAvailableProducts } from '../services/products';
 
@@ -93,8 +94,11 @@ export default function Menu() {
 
       <div className="max-w-3xl mx-auto px-4 py-4">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-inter font-bold text-foreground text-lg capitalize">
-            {getCategoryLabel(activeCategory)}
+          <h3 className="font-inter font-bold text-foreground text-lg capitalize flex items-center gap-2">
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-primary">
+              {CATEGORY_BADGE_ICONS[activeCategory] || CATEGORY_BADGE_ICONS.default}
+            </span>
+            <span>{getCategoryLabel(activeCategory)}</span>
           </h3>
           <span className="font-inter text-xs text-muted-foreground">
             {filtered.length} articles

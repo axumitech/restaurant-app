@@ -1,20 +1,12 @@
 import React from 'react';
-import { Coffee, CupSoda, Drumstick, Leaf, Soup, UtensilsCrossed } from 'lucide-react';
 
 import { PRODUCT_CATEGORIES } from '../../lib/categories';
-
-const categoryIcons = {
-  condiments: Soup,
-  accompagnements: Drumstick,
-  legumes: Leaf,
-  petit_dejeuner: Coffee,
-  boissons: CupSoda,
-};
+import { getCategoryIcon } from '../../lib/categoryIcons';
 
 const categories = PRODUCT_CATEGORIES.map((category) => ({
   ...category,
   id: category.value,
-  icon: categoryIcons[category.value] || UtensilsCrossed,
+  icon: getCategoryIcon(category.value),
 }));
 
 export default function CategoryNav({ active, onSelect }) {
@@ -29,6 +21,7 @@ export default function CategoryNav({ active, onSelect }) {
               <button
                 key={cat.id}
                 onClick={() => onSelect(cat.id)}
+                aria-pressed={isActive}
                 className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-inter font-medium whitespace-nowrap transition-all ${
                   isActive
                     ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
