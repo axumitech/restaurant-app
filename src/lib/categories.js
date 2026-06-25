@@ -2,7 +2,7 @@ export const PRODUCT_CATEGORIES = [
   { value: 'condiments', label: 'Condiments' },
   { value: 'accompagnements', label: 'Accompagnements' },
   { value: 'legumes', label: 'Légumes' },
-  { value: 'petit_dejeuner', label: 'Petit déjeuner' },
+  /* { value: 'petit_dejeuner', label: 'Petit déjeuner' }, */
   { value: 'boissons', label: 'Boissons' },
 ];
 
