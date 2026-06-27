@@ -45,6 +45,7 @@ function isSameLocalDay(dateA, dateB) {
 
 function formatPaymentType(type) {
   if (type === 'mobile_money') return 'Mobile money';
+  if (type === 'card') return 'Carte';
   if (type === 'credit') return 'Crédit';
   return 'Cash';
 }

@@ -20,6 +20,7 @@ const DATE_TIME_FORMATTER = new Intl.DateTimeFormat('fr-FR', {
 
 function formatPaymentType(type) {
   if (type === 'mobile_money') return 'Mobile money';
+  if (type === 'card') return 'Carte';
   if (type === 'credit') return 'Crédit';
   return 'Cash';
 }

@@ -17,6 +17,7 @@ import { validatePendingOrder } from '../services/orders';
 const PAYMENT_TYPES = [
   { value: 'cash', label: 'Cash' },
   { value: 'mobile_money', label: 'Mobile money' },
+  { value: 'card', label: 'Carte' },
   { value: 'credit', label: 'Crédit' },
 ];
 const PAGE_SIZE = 6;
@@ -281,7 +282,7 @@ function PendingOrderCard({ pendingOrder, clients, onValidated, onClientCreated 
 
         <div className="space-y-2">
           <label className="font-inter text-sm text-muted-foreground">Paiement</label>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {PAYMENT_TYPES.map((type) => (
               <button
                 key={type.value}

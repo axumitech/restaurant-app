@@ -90,7 +90,7 @@ create table public.orders (
   constraint orders_total_amount_positive check (total_amount >= 0),
   constraint orders_paid_amount_positive check (paid_amount >= 0),
   constraint orders_paid_not_greater_than_total check (paid_amount <= total_amount),
-  constraint orders_payment_type_valid check (payment_type in ('cash', 'mobile_money', 'credit'))
+  constraint orders_payment_type_valid check (payment_type in ('cash', 'mobile_money', 'card', 'credit'))
 );
 
 create table public.order_items (
@@ -118,7 +118,7 @@ create table public.client_payments (
   created_at timestamptz not null default now(),
 
   constraint client_payments_amount_positive check (amount > 0),
-  constraint client_payments_method_valid check (payment_method in ('cash', 'mobile_money', 'other')),
+  constraint client_payments_method_valid check (payment_method in ('cash', 'mobile_money', 'card', 'other')),
   constraint client_payments_source_valid check (payment_source in ('order_initial', 'debt_repayment'))
 );
 
@@ -294,7 +294,7 @@ declare
 begin
   perform public.require_admin_session(input_token);
 
-  if input_payment_type not in ('cash', 'mobile_money', 'credit') then
+  if input_payment_type not in ('cash', 'mobile_money', 'card', 'credit') then
     raise exception 'Type de paiement invalide';
   end if;
 
@@ -313,7 +313,7 @@ begin
     raise exception 'Panier invalide ou vide';
   end if;
 
-  if input_payment_type in ('cash', 'mobile_money') then
+  if input_payment_type in ('cash', 'mobile_money', 'card') then
     final_paid := computed_total;
   else
     final_paid := coalesce(input_paid_amount, 0);
@@ -350,7 +350,11 @@ begin
     values (
       input_client_id,
       final_paid,
-      case when input_payment_type = 'mobile_money' then 'mobile_money' else 'cash' end,
+      case
+        when input_payment_type = 'mobile_money' then 'mobile_money'
+        when input_payment_type = 'card' then 'card'
+        else 'cash'
+      end,
       'order_initial',
       'Paiement initial commande ' || upper(substr(new_order_id::text, 1, 8))
     );
